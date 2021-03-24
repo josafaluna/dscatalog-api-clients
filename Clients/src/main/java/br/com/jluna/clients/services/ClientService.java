@@ -39,7 +39,7 @@ public class ClientService {
 	@Transactional(readOnly = true)
 	public ClientDTO findById(Long id) {
 		Optional<Client> opt = repository.findById(id);
-		Client cli = opt.orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado."));
+		Client cli = opt.orElseThrow(() -> new ResourceNotFoundException("ID Not Found: " + id));
 		return new ClientDTO(cli);
 	}
 
@@ -47,15 +47,45 @@ public class ClientService {
 	@Transactional
 	public ClientDTO insert(@RequestBody ClientDTO dto) {
 		var client = new Client();
+		copyToEntity(dto, client);
+		client = repository.save(client);
+
+		return new ClientDTO(client);
+	}
+
+	@Transactional
+	public ClientDTO update(Long id, ClientDTO dto) {
+
+		try {
+			var client = repository.getOne(id);
+			copyToEntity(dto, client);
+			client = repository.save(client);
+
+			return new ClientDTO(client);
+
+		} catch (Exception e) {
+			throw new ResourceNotFoundException("ID not found " + id);
+		}
+
+	}
+
+	@Transactional
+	public void delete(Long id) {
+		try {
+			repository.deleteById(id);
+
+		} catch (Exception e) {
+			throw new ResourceNotFoundException("ID not found " + id);
+		}
+
+	}
+
+	private void copyToEntity(ClientDTO dto, Client client) {
 		client.setBirthDate(dto.getBirthDate());
 		client.setChildren(dto.getChildren());
 		client.setCpf(dto.getCpf());
 		client.setIncome(dto.getIncome());
 		client.setName(dto.getName());
-
-		client = repository.save(client);
-
-		return new ClientDTO(client);
 	}
 
 }
